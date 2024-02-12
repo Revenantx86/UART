@@ -39,7 +39,7 @@ module uart #
     input wire rxd,
 
     // -- input to baud_gen -- //
-        
+
     // -- uart rx -- //
     output wire [7:0] out_data,
 
@@ -53,12 +53,22 @@ module uart #
 wire baud_clk;
 wire baud_en;
 
+// Read Channel FIFO
 wire fifo_rx_wr_en;
 wire fifo_rx_rd_en;
-wire fifo_rx_data_in;
-wire fifo_rx_data_out;
+wire [D_W-1:0]fifo_rx_data_in;
+wire [D_W-1:0]fifo_rx_data_out;
 wire fifo_rx_full;
 wire fifo_rx_empty;
+
+// Transmit Channel FIFO
+wire fifo_tx_wr_en;
+wire fifo_tx_rd_en;
+wire [D_W-1:0]fifo_tx_data_in;
+wire [D_W-1:0]fifo_tx_data_out;
+wire fifo_tx_full;
+wire fifo_tx_empty;
+
 
 fifo #(.D_W(D_W), .DEPTH(64)) 
     fifo_rx (
@@ -70,6 +80,18 @@ fifo #(.D_W(D_W), .DEPTH(64))
             .data_out(fifo_rx_data_out),
             .full(fifo_rx_full),
             .empty(fifo_rx_empty)
+            );
+
+fifo #(.D_W(D_W), .DEPTH(64)) 
+    fifo_tx (
+            .clk(clk),
+            .rst(rst),
+            .wr_en(fifo_tx_wr_en),
+            .rd_en(fifo_tx_rd_en),
+            .data_in(fifo_tx_data_in),
+            .data_out(fifo_tx_data_out),
+            .full(fifo_tx_full),
+            .empty(fifo_tx_empty)
             );
 
 endmodule
