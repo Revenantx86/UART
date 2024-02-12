@@ -12,7 +12,8 @@ wire full;
 wire empty;
 
 // Instantiate the FIFO module
-fifo_8x64 uut (
+fifo #(.D_W(8), .DEPTH(64)) uut 
+(
     .clk(clk),
     .rst(rst),
     .wr_en(wr_en),

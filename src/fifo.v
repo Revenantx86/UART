@@ -1,22 +1,27 @@
-module fifo_8x64 (
-    input clk,                  // Clock input
-    input rst,                  // Reset input
-    input wr_en,                // Write enable
-    input rd_en,                // Read enable
-    input [7:0] data_in,        // Data input
-    output reg [7:0] data_out,  // Data output
-    output reg full,            // FIFO full flag
-    output reg empty            // FIFO empty flag
+module fifo #
+(
+    parameter D_W = 8,
+    parameter DEPTH = 64
+)
+(
+    input clk,                          // Clock input
+    input rst,                          // Reset input
+    input wr_en,                        // Write enable
+    input rd_en,                        // Read enable
+    input [D_W-1:0] data_in,            // Data input
+    output reg [D_W-1:0] data_out,      // Data output
+    output reg full,                    // FIFO full flag
+    output reg empty                    // FIFO empty flag
 );
 
 // FIFO memory array
-reg [7:0] fifo_mem[63:0];
+reg [D_W-1:0] fifo_mem[DEPTH-1:0];
 
 // Read and write pointers
-reg [5:0] write_pointer, read_pointer;
+reg [$clog2(DEPTH)-1:0] write_pointer, read_pointer;
 
 // Counter to keep track of the number of items in the FIFO
-reg [6:0] count;
+reg [$clog2(DEPTH):0] count;
 
 // Write operation
 always @(posedge clk) begin
@@ -26,7 +31,7 @@ always @(posedge clk) begin
     end else if (wr_en && !full) begin
         fifo_mem[write_pointer] <= data_in;
         write_pointer <= write_pointer + 1;
-        if (write_pointer == 63) full <= 1;
+        if (write_pointer == DEPTH-1) full <= 1;
     end
     if (wr_en && !full) begin
         count <= count + 1;
@@ -42,7 +47,7 @@ always @(posedge clk) begin
     end else if (rd_en && !empty) begin
         data_out <= fifo_mem[read_pointer];
         read_pointer <= read_pointer + 1;
-        if (read_pointer == 63) empty <= 1;
+        if (read_pointer == DEPTH-1) empty <= 1;
     end
     if (rd_en && !empty) begin
         count <= count - 1;
@@ -52,7 +57,7 @@ end
 
 // FIFO full and empty logic
 always @(*) begin
-    full = (count == 64);
+    full = (count == DEPTH);
     empty = (count == 0);
 end
 

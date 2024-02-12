@@ -9,7 +9,7 @@ NC=\033[0m # No Color
 # Module test
 fifo-test:
 	@echo "$(GREEN)Verilog testbench sythesis. $(NC)"
-	iverilog -o test/fifo/fifo_wave.vvp  test/fifo/fifo_tb.sv src/fifo_8x64.v
+	iverilog -o test/fifo/fifo_wave.vvp  test/fifo/fifo_tb.sv src/fifo.v
 	@echo "$(MAGENTA)Creating waveform file. $(NC)"
 	vvp -n test/fifo/fifo_wave.vvp
 	@echo "$(BLUE)Result Checker. $(NC)"
