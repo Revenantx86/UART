@@ -26,6 +26,16 @@ fifo_8x64 uut (
 // Clock generation
 always #5 clk = ~clk; // Generate a clock with a period of 10 ns
 
+integer file;
+initial begin
+    file = $fopen("test/fifo/output_data.txt", "w");
+    if (file == 0) begin
+        $display("Failed to open file.");
+        $finish;
+    end
+end
+
+
 // Test sequence
 initial begin
     // Initialize inputs
@@ -62,11 +72,24 @@ initial begin
     $finish;
 end
 
+// In the part of your testbench where you want to record data_out
+always @(posedge clk) begin
+    if (rd_en) begin
+        $fwrite(file, "%d\n", data_out); // Writing data_out to file
+    end
+end
+
 
 initial begin
     // Initialize VCD dump
     $dumpfile("test/fifo/fifo_tb.vcd");
     $dumpvars(0, fifo_8x64_tb);
+end
+
+initial begin
+    #10000; // Adjust the time according to your simulation
+    $fclose(file);
+    $finish;
 end
 
 endmodule
