@@ -1,17 +1,19 @@
 export DESIGN_NAME = uart
-export PLATFORM    = nangate45
+export PLATFORM    = sky130hd
 
-export VERILOG_FILES = ./user_design/$(DESIGN_NICKNAME)/src/fifo.v 
+export VERILOG_FILES = ./user_design/uart/src/uart.v \
+					   ./user_design/uart/src/fifo.v
 
-export SDC_FILE      = ./user_design/$(DESIGN_NICKNAME)/constraint.sdc
+export SDC_FILE      = ./user_design/uart/constraint.sdc
+export ABC_AREA = 1
 
-export CORE_UTILIZATION = 75
-export CORE_ASPECT_RATIO = 1.5
-export FP_PDN_CORE_RING = 1
+export CORE_UTILIZATION = 45
+#export CORE_ASPECT_RATIO = 1.5
+#export FP_PDN_CORE_RING = 1
 
 export TNS_END_PERCENT = 100
 
-export PLACE_DENSITY ?= 0.99
+export PLACE_DENSITY ?= 0.80
 
 # Power #
-export PDN_TCL ?= ./user_design/$(DESIGN_NICKNAME)/script/pdn.tcl
+#export PDN_TCL ?= ./user_design/uart/script/pdn.tcl
