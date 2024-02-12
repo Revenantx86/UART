@@ -1,3 +1,15 @@
+
+message_a = r"""
+      ____________________________
+     /                           /\
+    /           Works !        _/ /\
+   /                          / \/
+  /                           /\
+ /___________________________/ /
+ \___________________________\/
+  \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 
+  """
+
 def read_data(file_path):
     data_values = []
     with open(file_path, 'r') as file:
@@ -19,7 +31,7 @@ def verify_data(data_values):
             print(f"Data mismatch at position {expected_value}: expected {expected_value}, got {actual_value}")
             errors += 1
     if errors == 0:
-        print("All data values are as expected.")
+        print(message_a)
     else:
         print(f"Total errors: {errors}")
 
@@ -27,3 +39,4 @@ if __name__ == "__main__":
     file_path = 'test/fifo/output_data.txt'  # Update to the path where your data file is saved
     data_values = read_data(file_path)
     verify_data(data_values)
+
