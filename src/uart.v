@@ -26,7 +26,7 @@
  *
  */
 
-module uart # 
+module uart# 
 ( 
     parameter D_W = 8,
     parameter B_TICK = 16
@@ -35,23 +35,22 @@ module uart #
     input wire clk,
     input wire rst,
 
-    // -- Input UART -- //
-    input wire rxd,
+    // Read Channel FIFO
+    input wire fifo_rx_wr_en,
+    input wire fifo_rx_rd_en,
+    input wire [D_W-1:0]fifo_rx_data_in,
+    output wire [D_W-1:0]fifo_rx_data_out,
+    output wire fifo_rx_full,
+    output wire fifo_rx_empty,
 
-    // -- input to baud_gen -- //
-
-    // -- uart rx -- //
-    output wire [7:0] out_data,
-
-    // -- uart tx -- //
-    output wire txd,
-    input wire [7:0] input_data,
-    input wire tx_start,
-    output wire tx_done
+    // Transmit Channel FIFO
+    input wire fifo_tx_wr_en,
+    input wire fifo_tx_rd_en,
+    input wire [D_W-1:0]fifo_tx_data_in,
+    output wire [D_W-1:0]fifo_tx_data_out,
+    output wire fifo_tx_full,
+    output wire fifo_tx_empty
 );
-
-wire baud_clk;
-wire baud_en;
 
 // Read Channel FIFO
 wire fifo_rx_wr_en;
