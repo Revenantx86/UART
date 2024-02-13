@@ -52,6 +52,11 @@ module uart#
     output wire fifo_tx_empty
 );
 
+
+//------------------------//     
+//      Wire & Regs       //
+//------------------------//     
+
 // Read Channel FIFO
 wire fifo_rx_wr_en;
 wire fifo_rx_rd_en;
@@ -67,6 +72,23 @@ wire [D_W-1:0]fifo_tx_data_in;
 wire [D_W-1:0]fifo_tx_data_out;
 wire fifo_tx_full;
 wire fifo_tx_empty;
+
+// Baud generator
+wire [15:0] BRGxR;
+
+
+//------------------------//     
+//  Module instatiation   //
+//------------------------//    
+
+baud_gen #()
+    uart_baud_gen (
+            .clk(clk),
+            .rst(rst),
+            .DIVxR(),
+            .b_clk(),
+            .b_en()
+            );
 
 
 fifo #(.D_W(D_W), .DEPTH(64)) 
@@ -92,5 +114,12 @@ fifo #(.D_W(D_W), .DEPTH(64))
             .full(fifo_tx_full),
             .empty(fifo_tx_empty)
             );
+
+//------------------------//     
+//      AXI Control       //
+//------------------------//    
+
+
+
 
 endmodule
