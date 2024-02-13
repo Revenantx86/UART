@@ -14,7 +14,7 @@ export ADDITIONAL_LEFS = ./fifo.lef
 
 export CORE_UTILIZATION = 75
 export CORE_ASPECT_RATIO = 2
-#export FP_PDN_CORE_RING = 1
+export FP_PDN_CORE_RING = 1
 
 export TNS_END_PERCENT = 100
 
