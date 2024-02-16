@@ -10,7 +10,7 @@ export VERILOG_FILES = ./user_design/uart/src/uart.v \
 
 export SDC_FILE      = ./user_design/uart/constraint.sdc
 
-export ADDITIONAL_LEFS = ./fifo.lef
+export EXTRA_GDS_FILES = ./fifo.lef
 
 export CORE_UTILIZATION = 75
 export CORE_ASPECT_RATIO = 2

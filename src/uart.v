@@ -78,7 +78,7 @@ wire [15:0] BRGxR;
 
 
 //------------------------//     
-//  Module instatiation   //
+//  Module Instatiation   //
 //------------------------//    
 
 baud_gen #()

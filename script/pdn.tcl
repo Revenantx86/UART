@@ -28,9 +28,11 @@ add_pdn_ring -grid {grid} -layers {met4 met5} -width 2.0 -spacings 2.0 -core_off
 
 add_pdn_connect -grid {grid} -layers {met1 met4}
 add_pdn_connect -grid {grid} -layers {met4 met5}
+
 ####################################
 # macro grids
 ####################################
+
 ####################################
 # grid for: CORE_macro_grid_1
 ####################################
