@@ -26,7 +26,7 @@
  *
  */
 
-module uart# 
+module uart_top# 
 ( 
     parameter D_W = 8,
     parameter B_TICK = 16
@@ -80,15 +80,6 @@ wire [15:0] BRGxR;
 //------------------------//     
 //  Module Instatiation   //
 //------------------------//    
-
-baud_gen #()
-    uart_baud_gen (
-            .clk(clk),
-            .rst(rst),
-            .DIVxR(),
-            .b_clk(),
-            .b_en()
-            );
 
 
 fifo #(.D_W(D_W), .DEPTH(64)) 
