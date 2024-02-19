@@ -94,6 +94,7 @@ fifo #(.D_W(D_W), .DEPTH(64))
             .empty(fifo_rx_empty)
             );
 
+
 fifo #(.D_W(D_W), .DEPTH(64)) 
     fifo_tx (
             .clk(clk),

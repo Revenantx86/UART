@@ -5,12 +5,17 @@ module uart_rx
     parameter B_TICK = 16
 )
 (
+    // UART Essential Pins
     input wire rst,
     input wire clk,
     input wire baud_clk,
-    output reg[D_W-1:0] out_data,
     input wire rx_data,
-    output reg baud_en
+
+    output reg baud_en,
+    output reg[D_W-1:0] out_data, // Forwarded to FIFO
+    // UART FIFO Interface pins
+    input wire ff_full,
+    output reg ff_wr_en
 );
 
 reg [$clog2(B_TICK)-1:0] t_counter; // Counting Ticks
@@ -18,8 +23,8 @@ reg [$clog2(D_W)-1:0] bit_received; // Number of bits Received
 
 
 //state encoding
-
-enum {IDLE,START,DATA,STOP} STATE; // States
+enum {IDLE,START,DATA,STOP} STATE; // States for receive machine
+enum {WAIT,SEND,RETURN} FF_TX_STATE; // States for fifo transmit
 
 // -- -- State Machine -- -- //
 // Cases -> IDLE, START, DATA, STOP
@@ -28,10 +33,13 @@ begin
     // reset registers and state
     if(rst) begin
         STATE <= IDLE;
+        FF_TX_STATE <= IDLE;
+
         t_counter <= 0;
         bit_received <= 0;
         out_data <= 0;
         baud_en <= 0;
+        ff_wr_en <= 0;
     end
 
     // State machine begin // 
@@ -45,6 +53,9 @@ begin
                     STATE <= START; // change starting state
                     t_counter <= 0; // init counter
                     baud_en <= 1; // enable baud_clk generator
+                end
+                else begin
+                    t_counter <= 0;
                 end
             end
 
@@ -88,6 +99,29 @@ begin
             end
         endcase
     end
+end
+
+
+// FIFO Interface state machine
+always @(posedge clk) 
+begin
+    case(FF_TX_STATE)
+        WAIT: begin
+            if(STATE == STOP && !ff_full) 
+                FF_TX_STATE <= SEND;
+        end
+
+        SEND: begin
+            ff_wr_en <= 1;
+            FF_TX_STATE <= RETURN;
+        end
+        
+        RETURN: begin
+            ff_wr_en <= 0;
+            if(STATE == IDLE)
+                FF_TX_STATE <= WAIT;
+        end
+    endcase
 end
 
 endmodule

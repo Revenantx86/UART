@@ -1,11 +1,11 @@
 module baud_gen #
 (
-    parameter  = ;
+    parameter DIV_W = 16
 )
 (
     input wire clk,
     input wire rst,
-    input wire [15:0] DIVxR,
+    input wire [DIV_W-1:0] DIVxR,
     output reg b_clk,
     input wire b_en
 );
