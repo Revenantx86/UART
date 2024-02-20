@@ -18,7 +18,7 @@ export VERILOG_FILES = \
 export SDC_FILE      = ./user_design/uart/submodule/fifo/constraint.sdc
 
 # Power #
-export PDN_TCL ?= ./user_design/uart/script/pdn.tcl
+export PDN_TCL = $(TOP_DIR)/script/macro_pdn.tcl
 
 # Size #
 export CORE_UTILIZATION = 75
