@@ -13,7 +13,7 @@ module uart_rx_top
         output wire ff_data_out,
         output wire ff_empty,
         output wire ff_full
-    )
+    );
 
     // ** Instantiate the FIFO module ** //
     wire ff_wr_en;

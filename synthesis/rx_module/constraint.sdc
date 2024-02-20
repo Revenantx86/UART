@@ -1,4 +1,4 @@
-current_design uart
+current_design uart_rx_top
 
 set clk_name  core_clock
 set clk_port_name clk

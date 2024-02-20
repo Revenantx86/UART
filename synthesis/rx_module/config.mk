@@ -15,10 +15,13 @@ export VERILOG_FILES = \
 					$(RTL_DIR)/fifo.v 
 
 # Clock synth constraints #
-export SDC_FILE      = ./user_design/uart/submodule/fifo/constraint.sdc
+export SDC_FILE      = $(TOP_DIR)/synthesis/rx_module/constraint.sdc
 
 # Power #
 export PDN_TCL = $(TOP_DIR)/script/macro_pdn.tcl
+
+export ABC_DRIVER_CELL = sky130_fd_sc_hd__buf_1
+export ABC_LOAD_IN_FF = 3
 
 # Size #
 export CORE_UTILIZATION = 75

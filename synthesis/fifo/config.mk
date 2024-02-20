@@ -4,16 +4,13 @@ export PLATFORM    = sky130hd
 
 export WORK_HOME = .
 
-export VERILOG_FILES = ./user_design/uart/src/fifo.v
+export VERILOG_FILES = ./designs/sky130hd/uart/src/fifo.v
 
-export SDC_FILE      = ./user_design/uart/submodule/fifo/constraint.sdc
+export SDC_FILE      = ./designs/sky130hd/uart/synthesis/fifo/constraint.sdc
 
 export CORE_UTILIZATION = 75
 export CORE_ASPECT_RATIO = 2
-
-export TNS_END_PERCENT = 100
-
 export PLACE_DENSITY ?= 0.90
 
 # Power #
-export PDN_TCL ?= ./user_design/uart/script/pdn.tcl
+export PDN_TCL ?= ./designs/sky130hd/uart/script/macro_pdn.tcl
