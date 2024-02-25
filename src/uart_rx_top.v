@@ -9,19 +9,19 @@ module uart_rx_top
         output wire b_en,
 
         // fifo module input & outputs
-        input wire rd_en,
-        output wire ff_data_out,
+        input wire ff_rd_en,
+        input wire  rd_en,
+        output wire [D_W-1:0] ff_data_out,
         output wire ff_empty,
-        output wire ff_full
+        output wire ff_full,
+
+        input wire ff_wr_en,
+        input wire [D_W-1:0] ff_data_in
+        
     );
 
     // ** Instantiate the FIFO module ** //
-    wire ff_wr_en;
-    reg ff_rd_en;
-    reg [D_W-1:0] ff_data_in;
-    wire [D_W-1:0] ff_data_out;
-    wire ff_full;
-    wire ff_empty;
+
 
     fifo #(.D_W(D_W), .DEPTH(DEPTH)) 
         fifo_rx 
@@ -45,9 +45,9 @@ module uart_rx_top
                     .baud_clk(b_clk),
                     .rx_data(rx_data),
                     .baud_en(b_en),
-                    .out_data(ff_data_in),
+                    .out_data(),
                     .ff_full(ff_full),
-                    .ff_wr_en(ff_wr_en)
+                    .ff_wr_en()
         );
     // ** //
 

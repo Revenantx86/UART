@@ -23,5 +23,5 @@ uart_rx-test:
 	@echo "$(MAGENTA)Creating waveform file. $(NC)"
 	vvp -n test/rx_module/rx_module.vvp
 
-
-
+yosys:
+	yosys synth.ys
