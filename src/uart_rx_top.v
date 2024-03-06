@@ -24,7 +24,7 @@ module uart_rx_top
 
 
     fifo #(.D_W(D_W), .DEPTH(DEPTH)) 
-        fifo_rx 
+        fifo_rx_inst
                 (
                     .clk(clk),
                     .rst(rst),
@@ -39,7 +39,7 @@ module uart_rx_top
 
     // ** Instantiate the rx module ** //
     uart_rx #(.D_W(D_W), .B_TICK(B_TICK)) 
-        uart_rx (
+        uart_rx_inst (
                     .clk(clk),
                     .rst(rst),
                     .baud_clk(b_clk),
