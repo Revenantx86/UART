@@ -27,7 +27,8 @@ reg [$clog2(DEPTH):0] count;
 always @(posedge clk) begin
     if (rst) begin
         write_pointer <= 0;
-        full <= 0;
+        count <= 0;
+        //full <= 0;
     end else if (wr_en && !full) begin
         fifo_mem[write_pointer] <= data_in;
         write_pointer <= write_pointer + 1;
@@ -43,7 +44,8 @@ end
 always @(posedge clk) begin
     if (rst) begin
         read_pointer <= 0;
-        empty <= 1;
+        count <= 0;
+        //empty <= 1;
     end else if (rd_en && !empty) begin
         data_out <= fifo_mem[read_pointer];
         read_pointer <= read_pointer + 1;

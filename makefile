@@ -23,5 +23,13 @@ uart_rx-test:
 	@echo "$(MAGENTA)Creating waveform file. $(NC)"
 	vvp -n test/rx_module/rx_module.vvp
 
+
+uart-test:
+	@echo "$(GREEN)Verilog testbench sythesis. $(NC)"
+	iverilog -g2012  -o test/rx_module/rx_module.vvp  test/rx_module/rx_module_tb.sv src/fifo.v src/uart_rx.v src/baud_gen.v
+	@echo "$(MAGENTA)Creating waveform file. $(NC)"
+	vvp -n test/rx_module/rx_module.vvp
+
+
 yosys:
 	yosys synth.ys

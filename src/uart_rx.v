@@ -1,39 +1,50 @@
 module uart_rx 
 # 
 (
-    parameter D_W = 8,
-    parameter B_TICK = 16
+    parameter D_W = 8,                       // Data width
+    parameter B_TICK = 16                    // Number of ticks
 )
 (
     // UART Essential Pins
-    input wire rst,
-    input wire clk,
-    input wire baud_clk,
-    input wire rx_data,
+    input   wire          rst,                // Reset 
+    input   wire          clk,                // System CLK input
+    input   wire          baud_clk,           // Baud Generator CLK input
+    input   wire          rx_data,            // RX - Input
 
-    output reg baud_en,
-    output reg[D_W-1:0] out_data, // Forwarded to FIFO
-    // UART FIFO Interface pins
-    input wire ff_full,
-    output reg ff_wr_en
+    output  reg           baud_en,            // Enable Baud
+    output  reg [D_W-1:0] out_data,           // Forwarded to FIFO
+    
+    /*
+     * Status WIP
+     */
+    //output wire            overrun_error,     // 
+    //output wire            busy,              // 
+    //output wire            frame_error,       // 
+
+    /*
+     * FIFO Interface
+     */
+    input   wire          ff_full,            // FIFO Full -> Trigger ***
+    output  reg           ff_wr_en            // Enable FIFO
 );
 
-reg [$clog2(B_TICK)-1:0] t_counter; // Counting Ticks
-reg [$clog2(D_W)-1:0] bit_received; // Number of bits Received
+reg [$clog2(B_TICK)-1:0]  t_counter;          // Counting Ticks
+reg [$clog2(D_W)-1:0]     bit_received;       // Number of bits Received
 
 
-//state encoding
-enum {IDLE,START,DATA,STOP} STATE; // States for receive machine
-enum {WAIT,SEND,RETURN} FF_TX_STATE; // States for fifo transmit
+//  --- State Encoding ---  // 
 
-// -- -- State Machine -- -- //
-// Cases -> IDLE, START, DATA, STOP
-always @(posedge clk or posedge rst) 
-begin    
-    // reset registers and state
+enum {IDLE,START,DATA,STOP}     STATE;        // States for receive machine
+enum {FF_IDLE,FF_DATA,FF_STOP}  FF_STATE;     // States for fifo transmit
+
+/*                
+ * RX State Machines 
+ */               
+always @(posedge clk or posedge rst) begin
+    //    
     if(rst) begin
         STATE <= IDLE;
-        FF_TX_STATE <= IDLE;
+        FF_STATE <= FF_IDLE;
 
         t_counter <= 0;
         bit_received <= 0;
@@ -41,87 +52,86 @@ begin
         baud_en <= 0;
         ff_wr_en <= 0;
     end
-
-    // State machine begin // 
-    else
-    begin
-        case(STATE)     
-            
-            IDLE: 
+    //
+    else begin
+        case(STATE) 
+            //    
+            IDLE:                           // Wait for input
             begin
-                if(rx_data == 0) begin // wait for the data low
-                    STATE <= START; // change starting state
-                    t_counter <= 0; // init counter
-                    baud_en <= 1; // enable baud_clk generator
+                if(rx_data == 0) begin      // Wait for the data low
+                    STATE <= START;         // Change starting state
+                    t_counter <= 0;         // Init counter
+                    baud_en <= 1;           // Enable baud_clk generator
                 end
                 else begin
-                    t_counter <= 0;
+                    t_counter <= 0;         // Keep counter at zero
                 end
             end
-
-            START: 
+            //
+            START:                                              // Start counting to the middle
             begin
                 if(baud_clk) begin
-                    if(t_counter == (((B_TICK)/2)-1) ) begin // Half baud_clk cycle reached
-                        STATE <= DATA; // start data acquisition
-                        t_counter <= 0; 
-                        bit_received <= 0;
+                    if(t_counter == (((B_TICK)/2)-1) ) begin    // Half baud_clk cycle reached
+                        STATE <= DATA;                          // Start data acquisition
+                        t_counter <= 0;                         // Reset Tick counter
+                        bit_received <= 0;                      // Number of bit recevied = 0 
                     end                        
                     else
-                        t_counter <= t_counter + 1;
+                        t_counter <= t_counter + 1;             // Continue counting ticks
                 end        
             end
-
+            //
             DATA: begin
                 if(baud_clk) begin
-                    if(t_counter == (B_TICK-1) ) begin // Sample at the middle of the data 
-                        t_counter <= 0; // Reset baud_clk counter
-                        
-                        out_data <= {rx_data,out_data[7:1]}; // add data to     
-                        if(bit_received == (D_W-1)) // If bit size reached
-                            STATE <= STOP; // stop sequence
+                    if(t_counter == (B_TICK-1) ) begin               // Sample at the middle of the data 
+                        t_counter <= 0;                              // Reset baud_clk counter
+                        out_data <= {rx_data,out_data[7:1]};         // Add received bit to MSB 
+                        if(bit_received == (D_W-1))                  // If bit size reached
+                            STATE <= STOP;                           // Stop data acquisition sequence
                         else
-                            bit_received <= bit_received + 1; // else increase number of bit read
+                            bit_received <= bit_received + 1;        // Increase number of bits received
                     end
                     else
-                        t_counter <= t_counter + 1; // count ticks
+                        t_counter <= t_counter + 1;                  // Continue counting ticks
                 end
             end
-
+            //
             STOP: 
             begin
                 if(baud_clk) begin
-                    if(t_counter == (B_TICK-1) ) // If counter reached to end
-                        STATE <= IDLE; // return back to idle state
+                    if(t_counter == (B_TICK-1) )                    // If counter reached to end
+                        STATE <= IDLE;                              // Return back to IDLE state
                     else
-                        t_counter <= t_counter + 1; // countinue count baud_clk for the stop bit
+                        t_counter <= t_counter + 1;                 // Continue counting baud_clk for the stop bit to end
                 end
             end
+            //
         endcase
     end
 end
 
 
-// FIFO Interface state machine
-always @(posedge clk) 
-begin
-    case(FF_TX_STATE)
-        WAIT: begin
-            if(STATE == STOP && !ff_full) 
-                FF_TX_STATE <= SEND;
+/*                
+ * FIFO State Machine
+ */    
+always @(posedge clk) begin
+    //
+    case(FF_STATE)
+        FF_IDLE: begin
+            if(STATE == STOP && !ff_full)       // If rx completed receiving data && not full
+                FF_STATE <= FF_DATA;            // Start FIFO
         end
 
-        SEND: begin
-            ff_wr_en <= 1;
-            FF_TX_STATE <= RETURN;
+        FF_DATA: begin
+            ff_wr_en <= 1;                      // Enable FIFO write 
+            FF_STATE <= FF_STOP;                // GO to stop State
         end
         
-        RETURN: begin
-            ff_wr_en <= 0;
-            if(STATE == IDLE)
-                FF_TX_STATE <= WAIT;
+        FF_STOP: begin
+            ff_wr_en <= 0;                      // Disable read
+            if(STATE == IDLE)                   // If rx at idle, FIFO -> IDLE
+                FF_STATE <= FF_IDLE;
         end
     endcase
 end
-
 endmodule

@@ -29,27 +29,28 @@
 module uart_top# 
 ( 
     parameter D_W = 8,
-    parameter B_TICK = 16
+    parameter B_TICK = 16,
+    parameter DEPTH = 64
 ) 
 (
     input wire clk,
     input wire rst,
 
     // Read Channel FIFO
-    input wire fifo_rx_wr_en,
-    input wire fifo_rx_rd_en,
-    input wire [D_W-1:0]fifo_rx_data_in,
-    output wire [D_W-1:0]fifo_rx_data_out,
-    output wire fifo_rx_full,
-    output wire fifo_rx_empty,
+    input  wire           fifo_rx_wr_en,
+    input  wire           fifo_rx_rd_en,
+    input  wire [D_W-1:0] fifo_rx_data_in,
+    output wire [D_W-1:0] fifo_rx_data_out,
+    output wire           fifo_rx_full,
+    output wire           fifo_rx_empty,
 
     // Transmit Channel FIFO
-    input wire fifo_tx_wr_en,
-    input wire fifo_tx_rd_en,
-    input wire [D_W-1:0]fifo_tx_data_in,
-    output wire [D_W-1:0]fifo_tx_data_out,
-    output wire fifo_tx_full,
-    output wire fifo_tx_empty
+    input  wire            fifo_tx_wr_en,
+    input  wire            fifo_tx_rd_en,
+    input  wire  [D_W-1:0] fifo_tx_data_in,
+    output wire  [D_W-1:0] fifo_tx_data_out,
+    output wire            fifo_tx_full,
+    output wire            fifo_tx_empty
 );
 
 
@@ -78,38 +79,64 @@ wire [15:0] BRGxR;
 
 
 //------------------------//     
-//  Module Instatiation   //
-//------------------------//    
+//   BAUD CLK Generator   //
+//------------------------// 
+baud_gen # (.DIV_W(B_TICK))
+    baud_gen    (
+                .clk(clk),
+                .rst(rst),
+                .DIVxR(dvsr),
+                .b_clk(b_clk),
+                .b_en(b_en)
+                );
 
-
-fifo #(.D_W(D_W), .DEPTH(64)) 
-    fifo_rx (
-            .clk(clk),
-            .rst(rst),
-            .wr_en(fifo_rx_wr_en),
-            .rd_en(fifo_rx_rd_en),
-            .data_in(fifo_rx_data_in),
-            .data_out(fifo_rx_data_out),
-            .full(fifo_rx_full),
-            .empty(fifo_rx_empty)
-            );
-
-
-fifo #(.D_W(D_W), .DEPTH(64)) 
-    fifo_tx (
-            .clk(clk),
-            .rst(rst),
-            .wr_en(fifo_tx_wr_en),
-            .rd_en(fifo_tx_rd_en),
-            .data_in(fifo_tx_data_in),
-            .data_out(fifo_tx_data_out),
-            .full(fifo_tx_full),
-            .empty(fifo_tx_empty)
-            );
 
 //------------------------//     
-//      AXI Control       //
+//    FIFO Instatiation   //
 //------------------------//    
+fifo #(.D_W(D_W), .DEPTH(64)) 
+    fifo_rx_inst    (
+                    .clk(clk),
+                    .rst(rst),
+                    .wr_en(fifo_rx_wr_en),
+                    .rd_en(fifo_rx_rd_en),
+                    .data_in(fifo_rx_data_in),
+                    .data_out(fifo_rx_data_out),
+                    .full(fifo_rx_full),
+                    .empty(fifo_rx_empty)
+                    );
+fifo #(.D_W(D_W), .DEPTH(64)) 
+    fifo_tx_inst    (
+                    .clk(clk),
+                    .rst(rst),
+                    .wr_en(fifo_tx_wr_en),
+                    .rd_en(fifo_tx_rd_en),
+                    .data_in(fifo_tx_data_in),
+                    .data_out(fifo_tx_data_out),
+                    .full(fifo_tx_full),
+                    .empty(fifo_tx_empty)
+                    );
+//------------------------//     
+//   RX-TX Instatiation   //
+//------------------------//    
+uart_rx #(.D_W(D_W), .B_TICK(B_TICK))
+    uart_rx_inst    (
+                    .rst(),
+                    .clk(),
+                    .baud_clk(),
+                    .rx_data(),
+                    .baud_en(),
+                    .out_data(),
+                    //
+                    .ff_full(),
+                    .ff_wr_en()
+                    );
+
+
+
+//-------------------------------//     
+//      AXI Control Logic       //
+//-----------------------------//    
 
 
 

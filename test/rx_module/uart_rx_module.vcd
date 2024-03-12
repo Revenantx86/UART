@@ -1,5 +1,5 @@
 $date
-	Mon Feb 19 16:19:03 2024
+	Tue Mar 12 10:28:50 2024
 $end
 $version
 	Icarus Verilog
@@ -57,7 +57,7 @@ $var reg 3 9 bit_received [2:0] $end
 $var reg 1 ! ff_wr_en $end
 $var reg 8 : out_data [7:0] $end
 $var reg 4 ; t_counter [3:0] $end
-$var integer 32 < FF_TX_STATE [31:0] $end
+$var integer 32 < FF_STATE [31:0] $end
 $var integer 32 = STATE [31:0] $end
 $upscope $end
 $upscope $end
@@ -98,9 +98,10 @@ x"
 0!
 $end
 #5000
+1#
 0"
 b0 6
-1#
+b0 3
 b0 5
 1(
 #10000
@@ -41455,6 +41456,7 @@ b10 <
 b100 /
 0!
 0#
+b1 3
 b1 6
 1(
 #83540000
@@ -90127,6 +90129,7 @@ b10 <
 0(
 #179785000
 b100 /
+b10 3
 b10 6
 0!
 1(
@@ -101484,6 +101487,7 @@ b110110 /
 #202295000
 b0 /
 1'
+b1 3
 b1 5
 b11010101 $
 b11010101 4
@@ -105864,7 +105868,9 @@ b101011 /
 0(
 1*
 #210985000
+1#
 b101100 /
+b0 3
 b10 5
 b11011111 $
 b11011111 4
