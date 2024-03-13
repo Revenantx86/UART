@@ -30,71 +30,65 @@ module uart_top#
 ( 
     parameter D_W = 8,
     parameter B_TICK = 16,
-    parameter DEPTH = 64
+    parameter DEPTH = 64,
+    parameter DIV_W = 16
 ) 
 (
-    input wire clk,
-    input wire rst,
+    // Master wires
+    input wire      clk,
+    input wire      rst,
 
-    // Read Channel FIFO
-    input  wire           fifo_rx_wr_en,
-    input  wire           fifo_rx_rd_en,
-    input  wire [D_W-1:0] fifo_rx_data_in,
+    // RX-Channel I&O
+    input  wire     rx_data,
+
+    // AXI Read
+
+    // AXI Write
+    
+    //FIFO Test
+    input wire fifo_rx_rd_en,
     output wire [D_W-1:0] fifo_rx_data_out,
-    output wire           fifo_rx_full,
-    output wire           fifo_rx_empty,
-
-    // Transmit Channel FIFO
-    input  wire            fifo_tx_wr_en,
-    input  wire            fifo_tx_rd_en,
-    input  wire  [D_W-1:0] fifo_tx_data_in,
-    output wire  [D_W-1:0] fifo_tx_data_out,
-    output wire            fifo_tx_full,
-    output wire            fifo_tx_empty
+    output wire fifo_rx_empty
 );
-
-
+//
 //------------------------//     
 //      Wire & Regs       //
 //------------------------//     
-
+//
 // Read Channel FIFO
-wire fifo_rx_wr_en;
-wire fifo_rx_rd_en;
-wire [D_W-1:0]fifo_rx_data_in;
-wire [D_W-1:0]fifo_rx_data_out;
-wire fifo_rx_full;
-wire fifo_rx_empty;
-
+wire             fifo_rx_wr_en;
+//wire             fifo_rx_rd_en;
+wire [D_W-1:0]   fifo_rx_data_in;
+//wire [D_W-1:0]   fifo_rx_data_out;
+wire             fifo_rx_full;
+//wire             fifo_rx_empty;
+//
 // Transmit Channel FIFO
-wire fifo_tx_wr_en;
-wire fifo_tx_rd_en;
-wire [D_W-1:0]fifo_tx_data_in;
-wire [D_W-1:0]fifo_tx_data_out;
-wire fifo_tx_full;
-wire fifo_tx_empty;
-
-// Baud generator
-wire [15:0] BRGxR;
-
-
+wire             fifo_tx_wr_en;
+wire             fifo_tx_rd_en;
+wire  [D_W-1:0]  fifo_tx_data_in;
+wire  [D_W-1:0]  fifo_tx_data_out;
+//
+// Baud Generator 
+reg  [DIV_W-1:0]  DIVxR;
+wire              b_clk;
+wire              b_en;
+//
 //------------------------//     
 //   BAUD CLK Generator   //
 //------------------------// 
-baud_gen # (.DIV_W(B_TICK))
-    baud_gen    (
-                .clk(clk),
-                .rst(rst),
-                .DIVxR(dvsr),
-                .b_clk(b_clk),
-                .b_en(b_en)
-                );
-
-
+baud_gen # (.DIV_W(DIV_W))
+    baud_gen_inst   (
+                    .clk(clk),
+                    .rst(rst),
+                    .DIVxR(DIVxR),
+                    .b_clk(b_clk),
+                    .b_en(b_en)
+                    );
 //------------------------//     
 //    FIFO Instatiation   //
 //------------------------//    
-fifo #(.D_W(D_W), .DEPTH(64)) 
+fifo #(.D_W(D_W), .DEPTH(DEPTH)) 
     fifo_rx_inst    (
                     .clk(clk),
                     .rst(rst),
@@ -105,7 +99,7 @@ fifo #(.D_W(D_W), .DEPTH(64))
                     .full(fifo_rx_full),
                     .empty(fifo_rx_empty)
                     );
-fifo #(.D_W(D_W), .DEPTH(64)) 
+fifo #(.D_W(D_W), .DEPTH(DEPTH)) 
     fifo_tx_inst    (
                     .clk(clk),
                     .rst(rst),
@@ -121,23 +115,27 @@ fifo #(.D_W(D_W), .DEPTH(64))
 //------------------------//    
 uart_rx #(.D_W(D_W), .B_TICK(B_TICK))
     uart_rx_inst    (
-                    .rst(),
-                    .clk(),
-                    .baud_clk(),
-                    .rx_data(),
-                    .baud_en(),
-                    .out_data(),
+                    .rst(rst),
+                    .clk(clk),
+                    .baud_clk(b_clk),
+                    .rx_data(rx_data),
+                    .baud_en(b_en),
+                    .out_data(fifo_rx_data_in),
                     //
-                    .ff_full(),
-                    .ff_wr_en()
+                    .ff_full(fifo_rx_full),
+                    .ff_wr_en(fifo_rx_wr_en)
                     );
-
-
-
 //-------------------------------//     
 //      AXI Control Logic       //
 //-----------------------------//    
 
+always @(posedge clk ) begin
+
+    if(rst) begin
+        DIVxR = 16'd54; // Example value for baud rate of 115200 Baud Rate
+    end
+
+end
 
 
 

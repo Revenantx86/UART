@@ -12,7 +12,7 @@ module baud_gen #
 
     // Internal Wire and register definitions // 
     //
-    reg [15:0] r_reg; // 16 bit register to keep counter
+    reg [DIV_W-1:0] r_reg; // 16 bit register to keep counter
     //
     // -- Control Counter -- //
     always @(posedge clk or posedge rst) begin

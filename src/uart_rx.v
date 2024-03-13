@@ -45,7 +45,7 @@ always @(posedge clk or posedge rst) begin
     if(rst) begin
         STATE <= IDLE;
         FF_STATE <= FF_IDLE;
-
+        //
         t_counter <= 0;
         bit_received <= 0;
         out_data <= 0;
