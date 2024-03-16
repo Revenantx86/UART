@@ -6,20 +6,40 @@ module uart_tb;
 reg clk;
 reg rst;
 reg rx_data;
+reg tx_data;
+reg tx_start;
+wire tx_done;
 //
+reg ff_tx_wr_en;
 reg ff_rd_en;
 wire [7:0] ff_data_out;
 wire ff_empty;
 //
-uart_top #(.D_W(8), .B_TICK(16), .DEPTH(64), .DIV_W(16))
+//
+reg [7:0] PADDR;
+reg PSEL;
+reg PENABLE;
+reg PWRITE;
+reg [7:0] PDATA;
+wire PREADY;
+wire [7:0] PRDATA;
+//
+uart_top #(.D_W(8), .B_TICK(16), .DEPTH(64), .DIV_W(16), .APB_DW(8))
     uart_top_inst   (
                     .rst(rst),
                     .clk(clk),
                     .rx_data(rx_data),
                     //
-                    .fifo_rx_rd_en(ff_rd_en),
-                    .fifo_rx_data_out(ff_data_out),
-                    .fifo_rx_empty(ff_empty)
+                    .tx_data(tx_data),
+                    .tx_start(tx_start),
+                    //
+                    .PADDR(PADDR),
+                    .PSEL(PSEL),
+                    .PENABLE(PENABLE),
+                    .PWRITE(PWRITE),
+                    .PWDATA(PDATA),
+                    .PREADY(PREADY),
+                    .PRDATA(PRDATA)
                     );
 //
 // --- TEST BENCH --- //
@@ -33,6 +53,8 @@ initial begin
     // Initialize Inputs
     rst = 1;
     rx_data = 1; // Typically idle high]
+    ff_tx_wr_en = 0;
+    ff_rd_en = 0; // Ensure read enable is disabled
     #10 rst = 0; // Release reset
     // Send a byte (for example 0x55)
     // Assuming LSB first transmission
@@ -70,16 +92,6 @@ initial begin
 
 
     #8680;
-    // Read data from the FIFO
-    if (!ff_empty) ff_rd_en = 1; // If FIFO is not empty, enable read
-    #10;
-    ff_rd_en = 0; // Ensure read enable is disabled
-    #8680;
-    if (!ff_empty) ff_rd_en = 1; // If FIFO is not empty, enable read
-    #10;
-    ff_rd_en = 0; // Ensure read enable is disabled
-    #10000;
-
     #100;
     $finish; // End simulation
 end

@@ -26,7 +26,7 @@ uart_rx-test:
 
 uart-test:
 	@echo "$(GREEN)Verilog testbench sythesis. $(NC)"
-	iverilog -g2012  -o test/uart/uart_tb.vvp  test/uart/uart_tb.sv src/uart_top.v src/fifo.v src/uart_rx.v src/baud_gen.v
+	iverilog -g2012  -o test/uart/uart_tb.vvp  test/uart/uart_tb.sv src/uart_top.v src/fifo.v src/uart_rx.v src/uart_tx.v src/baud_gen.v
 	@echo "$(MAGENTA)Creating waveform file. $(NC)"
 	vvp -n test/uart/uart_tb.vvp
 

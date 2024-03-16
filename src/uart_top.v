@@ -31,48 +31,70 @@ module uart_top#
     parameter D_W = 8,
     parameter B_TICK = 16,
     parameter DEPTH = 64,
-    parameter DIV_W = 16
+    parameter DIV_W = 16,
+    //
+    parameter APB_DW = 8
 ) 
 (
     // Master wires
-    input wire      clk,
-    input wire      rst,
-
+    input  wire      clk,
+    input  wire      rst,
+    //
     // RX-Channel I&O
     input  wire     rx_data,
-
-    // AXI Read
-
-    // AXI Write
-    
+    //
+    // TX-Channel I&O
+    output reg      tx_data,
+    input  wire     tx_start,
+    //
+    /*
+     * - APB Interface - 
+     */
+    input  wire [APB_DW-1:0] PADDR,
+    input  wire              PSEL,
+    input  wire              PENABLE,
+    input  wire              PWRITE,
+    input  wire [APB_DW-1:0] PWDATA,
+    output reg               PREADY,
+    output reg  [APB_DW-1:0] PRDATA
     //FIFO Test
-    input wire fifo_rx_rd_en,
-    output wire [D_W-1:0] fifo_rx_data_out,
-    output wire fifo_rx_empty
+    //input  wire           fifo_rx_rd_en,
+    //output wire [D_W-1:0] fifo_rx_data_out,
+    //output wire           fifo_rx_empty,
+    //input  wire             fifo_tx_wr_en,
+    //input  wire  [D_W-1:0]  fifo_tx_data_in,
+    //output wire             tx_done
 );
 //
 //------------------------//     
 //      Wire & Regs       //
 //------------------------//     
 //
-// Read Channel FIFO
+// -- Baud Generator -- //
+reg  [DIV_W-1:0]  DIVxR;
+wire              b_clk;
+wire              b_en;
+// -- Read Channel FIFO -- //
 wire             fifo_rx_wr_en;
-//wire             fifo_rx_rd_en;
+reg              fifo_rx_rd_en;
 wire [D_W-1:0]   fifo_rx_data_in;
-//wire [D_W-1:0]   fifo_rx_data_out;
+wire [D_W-1:0]   fifo_rx_data_out;
 wire             fifo_rx_full;
-//wire             fifo_rx_empty;
+wire             fifo_rx_empty;
 //
-// Transmit Channel FIFO
+// -- Transmit Channel FIFO -- //
 wire             fifo_tx_wr_en;
 wire             fifo_tx_rd_en;
 wire  [D_W-1:0]  fifo_tx_data_in;
 wire  [D_W-1:0]  fifo_tx_data_out;
-//
-// Baud Generator 
-reg  [DIV_W-1:0]  DIVxR;
-wire              b_clk;
-wire              b_en;
+// -- TX -- //
+wire             tx_done;
+wire             b_en_tx;
+
+// -- RX -- //
+wire             b_en_rx;
+
+assign b_en = b_en_tx | b_en_rx;
 //
 //------------------------//     
 //   BAUD CLK Generator   //
@@ -119,21 +141,74 @@ uart_rx #(.D_W(D_W), .B_TICK(B_TICK))
                     .clk(clk),
                     .baud_clk(b_clk),
                     .rx_data(rx_data),
-                    .baud_en(b_en),
+                    .baud_en(b_en_rx),
                     .out_data(fifo_rx_data_in),
                     //
                     .ff_full(fifo_rx_full),
                     .ff_wr_en(fifo_rx_wr_en)
                     );
-//-------------------------------//     
-//      AXI Control Logic       //
+uart_tx #(.D_W(D_W), .B_TICK(B_TICK))
+    uart_tx_inst    (
+                    .rst(rst),
+                    .clk(clk),
+                    .baud_clk(b_clk),
+                    .input_data(fifo_tx_data_out),
+                    .tx_start(tx_start),
+                    .baud_en(b_en_tx),
+                    .tx_data(tx_data),
+                    .tx_done(tx_done),
+                    //
+                    .ff_rd_en(fifo_tx_rd_en),
+                    .ff_empty(fifo_tx_empty)
+                    );
+//-----------------------------//     
+//      APB Control Logic      //
 //-----------------------------//    
+/*
+ * - Read Request Interface - 
+ */
+ //
+ enum {IDLE,SETUP,ACCESS} STATE;
+//
+always @(posedge clk or rst) begin
+    //
+    case(STATE) 
+        //
+        IDLE : begin
+            if(PSEL && !PWRITE) begin
+                STATE <= SETUP;
+            end
+        end
+        //
+        SETUP : begin
+            if(!fifo_rx_empty) begin
+                fifo_rx_rd_en <= 1;
+                STATE <= ACCESS;
+                PRDATA <= fifo_rx_data_out;
+            end
+        end
+        //
+        ACCESS : begin
+            fifo_rx_rd_en <= 0;
+            STATE <= IDLE;
+        end
+        //
+    endcase
+    //
+end
 
+/*
+ * - Write Request Interface - 
+ */
 always @(posedge clk ) begin
-
     if(rst) begin
         DIVxR = 16'd54; // Example value for baud rate of 115200 Baud Rate
     end
+end
+
+// Demo tx buffer write operation
+always @(posedge clk) begin
+
 
 end
 

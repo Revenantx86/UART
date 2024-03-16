@@ -1,31 +1,49 @@
 module uart_tx #
 (
-    parameter D_W = 8,
-    parameter B_TICK = 16
+    parameter D_W       = 8,
+    parameter B_TICK    = 16
 ) 
 (
-    input wire rst,
-    input wire clk,
-    input wire baud_clk,
-    input wire [D_W-1:0] input_data,
-    input wire tx_start,
-    output reg baud_en,
-    output reg tx_data,
-    output reg tx_done
+    /*
+     * UART - Essential Pins - 
+     */
+    input  wire           rst,              // Reset
+    input  wire           clk,              // System Clock Input
+    input  wire           baud_clk,         // Baud Generator CLK Input
+    input  wire [D_W-1:0] input_data,       // Data to be sent
+    input  wire           tx_start,         // Data transmisson start flag from controll
+    //
+    output reg            baud_en,          // Baud generator enable flag
+    output reg            tx_data,          // TX data bit output
+    output reg            tx_done,          // Transmission done Flag
+    /*
+     * Status WIP
+     */
+
+    /*
+     * FIFO Interface
+     */
+    output reg           ff_rd_en,         // FIFO read enable for loading
+    input wire            ff_empty          //  FIFO Empty Flag
+    //
 );
-
-reg [$clog2(B_TICK)-1:0] t_counter; // Counting Ticks
-reg [$clog2(D_W)-1:0] bit_shifted; // Number of bits Received
-
-// State Encoding //
-enum {IDLE,START,DATA,STOP} STATE; // States
-
-always @ (posedge clk or posedge rst) 
-begin
-    
+//
+reg [$clog2(B_TICK)-1:0] t_counter;         // Counting Ticks
+reg [$clog2(D_W)-1:0] bit_shifted;          // Number of bits Received
+//
+// --- State Encodings --- //
+enum {IDLE,START,DATA,STOP} STATE;          // State for TX Logic 
+enum {FF_IDLE,FF_LOAD,FF_STOP} FF_STATE;    // State for FIFO
+//
+/*                
+ * TX State Machines 
+ */ 
+always @ (posedge clk or posedge rst) begin
     // Reset registers and state
     if(rst)begin
         STATE <= IDLE;
+        FF_STATE <= FF_IDLE;
+        //
         t_counter <= 0;
         bit_shifted <= 0;
         tx_data <= 1; // Default state of tx bit
@@ -37,16 +55,16 @@ begin
     else 
     begin
         case(STATE) 
-
+            //
             IDLE: 
             begin
                 if(tx_start) begin
-                    STATE <= START;
-                    t_counter <= 0;
-                    baud_en <= 1;
+                    STATE <= START;         // If send data initalized, state -> Start
+                    t_counter <= 0;         // Reset the counter for counting bit sent
+                    baud_en <= 1;           // Enable baud clock for counting ticks
                 end
             end
-            
+            //
             START: 
             begin
                 tx_data <= 0;
@@ -59,7 +77,7 @@ begin
                         t_counter <= t_counter + 1;
                 end
             end
-            
+            //
             DATA:
             begin
                 tx_data <= input_data[bit_shifted];
@@ -75,7 +93,7 @@ begin
                         t_counter <= t_counter + 1;
                 end
             end
-        
+            //
             STOP:
             begin
                 if(baud_clk) begin
@@ -88,11 +106,28 @@ begin
                         t_counter <= t_counter +1;
                 end
             end
-
         endcase
     end
+end
 
+/*                
+ * FIFO State Machine
+ */    
+always @(posedge clk) begin
+    //
+    case(FF_STATE)
+        FF_IDLE: begin
+            if(STATE == IDLE && !ff_empty && tx_start)       // If rx completed receiving data && not full
+                FF_STATE <= FF_LOAD;            // Start FIFO
+        end
 
+        FF_LOAD: begin
+            ff_rd_en <= 1;                      // Enable FIFO write 
+            FF_STATE <= FF_IDLE;                // GO to IDLE State
+        end
+
+    endcase
+    //
 end
 
 
