@@ -49,6 +49,7 @@ always @ (posedge clk or posedge rst) begin
         tx_data <= 1; // Default state of tx bit
         baud_en <= 0;
         tx_done <= 0;
+        ff_rd_en <= 0;
     end
     
     // State Machine begin //

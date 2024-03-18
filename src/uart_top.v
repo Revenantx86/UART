@@ -56,14 +56,8 @@ module uart_top#
     input  wire              PWRITE,
     input  wire [APB_DW-1:0] PWDATA,
     output reg               PREADY,
-    output reg  [APB_DW-1:0] PRDATA
-    //FIFO Test
-    //input  wire           fifo_rx_rd_en,
-    //output wire [D_W-1:0] fifo_rx_data_out,
-    //output wire           fifo_rx_empty,
-    //input  wire             fifo_tx_wr_en,
-    //input  wire  [D_W-1:0]  fifo_tx_data_in,
-    //output wire             tx_done
+    output reg  [APB_DW-1:0] PRDATA,
+    output reg               PSLVERR
 );
 //
 //------------------------//     
@@ -83,9 +77,9 @@ wire             fifo_rx_full;
 wire             fifo_rx_empty;
 //
 // -- Transmit Channel FIFO -- //
-wire             fifo_tx_wr_en;
-wire             fifo_tx_rd_en;
-wire  [D_W-1:0]  fifo_tx_data_in;
+reg              fifo_tx_wr_en;
+reg              fifo_tx_rd_en;
+reg  [D_W-1:0]   fifo_tx_data_in;
 wire  [D_W-1:0]  fifo_tx_data_out;
 // -- TX -- //
 wire             tx_done;
@@ -170,48 +164,94 @@ uart_tx #(.D_W(D_W), .B_TICK(B_TICK))
  //
  enum {IDLE,SETUP,ACCESS} STATE;
 //
+//
+always@(*) begin
+    PRDATA <= fifo_rx_data_out;
+end
 always @(posedge clk or rst) begin
     //
-    case(STATE) 
-        //
-        IDLE : begin
-            if(PSEL && !PWRITE) begin
-                STATE <= SETUP;
+    if(rst) begin
+        fifo_rx_rd_en <= 0;
+    end
+    else begin
+        case(STATE) // APB Interface State Machine
+            //
+            IDLE : begin
+                PREADY <= 0;
+                if(PSEL) begin
+                    STATE <= SETUP;
+                end
             end
-        end
-        //
-        SETUP : begin
-            if(!fifo_rx_empty) begin
-                fifo_rx_rd_en <= 1;
-                STATE <= ACCESS;
-                PRDATA <= fifo_rx_data_out;
+            //
+            SETUP : begin
+                if (PENABLE) begin
+                    STATE <= ACCESS;
+                    PREADY <= 1;
+                end
             end
-        end
+            //
+            ACCESS : begin
+                PREADY <= 0;
+                STATE <= IDLE;
+            end
+            //
+        endcase
+        /*
+        * - Read Request Interface - 
+        */
+        case (STATE) // Internal logic
         //
-        ACCESS : begin
-            fifo_rx_rd_en <= 0;
-            STATE <= IDLE;
-        end
+            IDLE : begin
+                fifo_rx_rd_en <= 0;
+                if(PSEL && !PWRITE) begin
+                    fifo_rx_rd_en <= 1;
+                end            
+            end
+            //
+            SETUP : begin
+                if(fifo_rx_empty) PSLVERR <= 1;
+                fifo_rx_rd_en <= 0;
+            end
+            //
+            ACCESS : begin
+                PSLVERR <= 0;   
+            end
         //
-    endcase
-    //
+        endcase
+        /*
+        * - Write Request Interface - 
+        */
+        // Write ADDR Command Data sheet
+        // x01 = write on divxr
+        // x02 = write fifo tx buffer
+        // x03 = 
+        case (STATE) // Internal logic
+        //
+            IDLE : begin
+                fifo_tx_wr_en <= 0;
+                if(PSEL && PWRITE) begin
+                    fifo_tx_wr_en <= 1;
+                end            
+            end
+            //
+            SETUP : begin
+                if(fifo_tx_full) PSLVERR <= 1;
+                fifo_tx_wr_en <= 0;
+            end
+            //
+            ACCESS : begin
+                PSLVERR <= 0;   
+            end
+        //
+        endcase
+    end
 end
 
-/*
- * - Write Request Interface - 
- */
+//
 always @(posedge clk ) begin
     if(rst) begin
         DIVxR = 16'd54; // Example value for baud rate of 115200 Baud Rate
     end
 end
-
-// Demo tx buffer write operation
-always @(posedge clk) begin
-
-
-end
-
-
 
 endmodule

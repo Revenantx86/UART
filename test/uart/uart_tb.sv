@@ -16,17 +16,18 @@ wire [7:0] ff_data_out;
 wire ff_empty;
 //
 //
+reg PRESET;
 reg [7:0] PADDR;
 reg PSEL;
 reg PENABLE;
 reg PWRITE;
-reg [7:0] PDATA;
+reg [7:0] PWDATA;
 wire PREADY;
 wire [7:0] PRDATA;
 //
 uart_top #(.D_W(8), .B_TICK(16), .DEPTH(64), .DIV_W(16), .APB_DW(8))
     uart_top_inst   (
-                    .rst(rst),
+                    .rst(!PRESET),
                     .clk(clk),
                     .rx_data(rx_data),
                     //
@@ -37,7 +38,7 @@ uart_top #(.D_W(8), .B_TICK(16), .DEPTH(64), .DIV_W(16), .APB_DW(8))
                     .PSEL(PSEL),
                     .PENABLE(PENABLE),
                     .PWRITE(PWRITE),
-                    .PWDATA(PDATA),
+                    .PWDATA(PWDATA),
                     .PREADY(PREADY),
                     .PRDATA(PRDATA)
                     );
@@ -45,17 +46,27 @@ uart_top #(.D_W(8), .B_TICK(16), .DEPTH(64), .DIV_W(16), .APB_DW(8))
 // --- TEST BENCH --- //
 // Clock Generation & Initial declarations
 initial begin
-    clk = 0;
+    clk = 1;
     forever #5 clk = ~clk; // 100 MHz Clock
+end
+
+// Reset APB Signals
+initial begin
+    PRESET = 1;
+    PADDR = 0;
+    PENABLE = 0;
+    PWDATA = 0;
+    PSEL = 0;
+    PWRITE = 0;
 end
 
 initial begin
     // Initialize Inputs
-    rst = 1;
+    PRESET = 0;
     rx_data = 1; // Typically idle high]
     ff_tx_wr_en = 0;
     ff_rd_en = 0; // Ensure read enable is disabled
-    #10 rst = 0; // Release reset
+    #10 PRESET = 1; // Release reset
     // Send a byte (for example 0x55)
     // Assuming LSB first transmission
     // Start bit
@@ -90,9 +101,49 @@ initial begin
     #8680 rx_data = 1; // Stop bit
     #10000; // Wait for some time after transmission
 
+    PSEL <= 1;
+    PWRITE <= 0;
+    #10
+    PENABLE <= 1;
+    wait(PREADY == 1);
+    #10
+    PENABLE <= 0;
+    PSEL <= 0;
+    #1000;
 
-    #8680;
-    #100;
+    PSEL <= 1;
+    PWRITE <= 0;
+    #10
+    PENABLE <= 1;
+    wait(PREADY == 1);
+    #10
+    PENABLE <= 0;
+    PSEL <= 0;
+    #1000;
+
+    PSEL <= 1;
+    PWRITE <= 0;
+    #10
+    PENABLE <= 1;
+    wait(PREADY == 1);
+    #10
+    PENABLE <= 0;
+    PSEL <= 0;
+    #1000;
+
+
+    PSEL <= 1;
+    PWRITE <= 1;
+    PADDR <= 2;
+    PWDATA <= 56;
+    #10
+    PENABLE <= 1;
+    wait(PREADY == 1);
+    #10
+    PENABLE <= 0;
+    PWRITE <= 0;
+    PSEL <= 0;
+    #1000;
     $finish; // End simulation
 end
 
