@@ -79,7 +79,7 @@ wire             fifo_rx_empty;
 // -- Transmit Channel FIFO -- //
 reg              fifo_tx_wr_en;
 reg              fifo_tx_rd_en;
-reg  [D_W-1:0]   fifo_tx_data_in;
+reg  [D_W-1:0]  fifo_tx_data_in;
 wire  [D_W-1:0]  fifo_tx_data_out;
 // -- TX -- //
 wire             tx_done;
@@ -165,9 +165,7 @@ uart_tx #(.D_W(D_W), .B_TICK(B_TICK))
  enum {IDLE,SETUP,ACCESS} STATE;
 //
 //
-always@(*) begin
-    PRDATA <= fifo_rx_data_out;
-end
+
 always @(posedge clk or rst) begin
     //
     if(rst) begin
@@ -228,19 +226,20 @@ always @(posedge clk or rst) begin
         case (STATE) // Internal logic
         //
             IDLE : begin
-                fifo_tx_wr_en <= 0;
-                if(PSEL && PWRITE) begin
-                    fifo_tx_wr_en <= 1;
-                end            
+                
             end
             //
             SETUP : begin
-                if(fifo_tx_full) PSLVERR <= 1;
-                fifo_tx_wr_en <= 0;
+                if(PSEL && PWRITE) begin
+                    if(fifo_tx_full) PSLVERR <= 1;
+                    else fifo_tx_wr_en <= 1;
+                end   
             end
             //
             ACCESS : begin
                 PSLVERR <= 0;   
+                fifo_tx_wr_en <= 0;
+
             end
         //
         endcase
@@ -253,5 +252,18 @@ always @(posedge clk ) begin
         DIVxR = 16'd54; // Example value for baud rate of 115200 Baud Rate
     end
 end
+
+always @(*) begin
+    if(PADDR == 2) fifo_tx_data_in = PWDATA;
+    else fifo_tx_data_in = 0;
+end
+
+
+always@(*) begin
+    PRDATA <= fifo_rx_data_out;
+end
+
+
+
 
 endmodule
