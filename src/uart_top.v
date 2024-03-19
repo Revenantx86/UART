@@ -79,8 +79,10 @@ wire             fifo_rx_empty;
 // -- Transmit Channel FIFO -- //
 reg              fifo_tx_wr_en;
 reg              fifo_tx_rd_en;
-reg  [D_W-1:0]  fifo_tx_data_in;
+reg   [D_W-1:0]  fifo_tx_data_in;
 wire  [D_W-1:0]  fifo_tx_data_out;
+wire             fifo_tx_empty;
+wire             fifo_tx_full;
 // -- TX -- //
 wire             tx_done;
 wire             b_en_tx;
@@ -166,10 +168,12 @@ uart_tx #(.D_W(D_W), .B_TICK(B_TICK))
 //
 //
 
-always @(posedge clk or rst) begin
+always @(posedge clk) begin
     //
     if(rst) begin
         fifo_rx_rd_en <= 0;
+        fifo_tx_data_in <= 0;
+        DIVxR <= 16'd54;
     end
     else begin
         case(STATE) // APB Interface State Machine
@@ -222,7 +226,6 @@ always @(posedge clk or rst) begin
         // Write ADDR Command Data sheet
         // x01 = write on divxr
         // x02 = write fifo tx buffer
-        // x03 = 
         case (STATE) // Internal logic
         //
             IDLE : begin
@@ -230,10 +233,16 @@ always @(posedge clk or rst) begin
             end
             //
             SETUP : begin
-                if(PSEL && PWRITE) begin
+                if(PSEL && PWRITE && PADDR == 2) begin
                     if(fifo_tx_full) PSLVERR <= 1;
-                    else fifo_tx_wr_en <= 1;
-                end   
+                    else begin
+                        fifo_tx_wr_en <= 1;
+                        fifo_tx_data_in <= PWDATA;
+                    end
+                end
+                if(PSEL && PWRITE && PADDR == 1) begin
+                    DIVxR [APB_DW-1:0] <= PWDATA;
+                end
             end
             //
             ACCESS : begin
@@ -245,25 +254,9 @@ always @(posedge clk or rst) begin
         endcase
     end
 end
-
 //
-always @(posedge clk ) begin
-    if(rst) begin
-        DIVxR = 16'd54; // Example value for baud rate of 115200 Baud Rate
-    end
-end
-
-always @(*) begin
-    if(PADDR == 2) fifo_tx_data_in = PWDATA;
-    else fifo_tx_data_in = 0;
-end
-
-
 always@(*) begin
     PRDATA <= fifo_rx_data_out;
 end
-
-
-
-
+//
 endmodule

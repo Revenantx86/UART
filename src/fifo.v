@@ -24,43 +24,45 @@ reg [$clog2(DEPTH)-1:0] write_pointer, read_pointer;
 reg [$clog2(DEPTH):0] count;
 
 // Write operation
+//
 always @(posedge clk) begin
+    //
     if (rst) begin
         write_pointer <= 0;
-        count <= 0;
-        //full <= 0;
-    end else if (wr_en && !full) begin
-        fifo_mem[write_pointer] <= data_in;
-        write_pointer <= write_pointer + 1;
-        if (write_pointer == DEPTH-1) full <= 1;
-    end
-    if (wr_en && !full) begin
-        count <= count + 1;
-        empty <= 0;
-    end
-end
-
-// Read operation
-always @(posedge clk) begin
-    if (rst) begin
         read_pointer <= 0;
         count <= 0;
-        //empty <= 1;
-    end else if (rd_en && !empty) begin
+    end 
+    //
+    else if (wr_en && !full) begin
+        fifo_mem[write_pointer] <= data_in;
+        write_pointer <= write_pointer + 1;
+    end 
+    //
+    else if (rd_en && !empty) begin
         data_out <= fifo_mem[read_pointer];
         read_pointer <= read_pointer + 1;
-        if (read_pointer == DEPTH-1) empty <= 1;
     end
+    //
+    if (wr_en && !full) begin
+        count <= count + 1;
+    end
+    //
     if (rd_en && !empty) begin
         count <= count - 1;
-        full <= 0;
     end
+    //
 end
-
+//
 // FIFO full and empty logic
 always @(*) begin
-    full = (count == DEPTH);
-    empty = (count == 0);
+    if(rst) begin
+        full = 0;
+        empty = 1;
+    end
+    else begin
+        full = (count == DEPTH);
+        empty = (count == 0);
+    end
 end
-
+//
 endmodule
