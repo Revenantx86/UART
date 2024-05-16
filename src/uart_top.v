@@ -36,16 +36,23 @@ module uart_top#
     parameter APB_DW = 8
 ) 
 (
-    // Master wires
+    // Master wires //
     input  wire      clk,
     input  wire      rst,
+    input  wire      module_enable,
     //
-    // RX-Channel I&O
+    /*
+     * - RX Channel I/O  - 
+     */
     input  wire     rx_data,
+    output wire     rx_done,
     //
-    // TX-Channel I&O
+    /*
+     * - TX Channel I/O  - 
+     */
     output reg      tx_data,
     input  wire     tx_start,
+    output reg      tx_done, 
     //
     /*
      * - APB Interface - 
@@ -58,6 +65,7 @@ module uart_top#
     output reg               PREADY,
     output reg  [APB_DW-1:0] PRDATA,
     output reg               PSLVERR
+    //
 );
 //
 //------------------------//     
@@ -86,10 +94,10 @@ wire             fifo_tx_full;
 // -- TX -- //
 wire             tx_done;
 wire             b_en_tx;
-
+//
 // -- RX -- //
 wire             b_en_rx;
-
+//
 assign b_en = b_en_tx | b_en_rx;
 //
 //------------------------//     
@@ -167,7 +175,7 @@ uart_tx #(.D_W(D_W), .B_TICK(B_TICK))
  enum {IDLE,SETUP,ACCESS} STATE;
 //
 //
-
+//
 always @(posedge clk) begin
     //
     if(rst) begin
@@ -248,7 +256,7 @@ always @(posedge clk) begin
             ACCESS : begin
                 PSLVERR <= 0;   
                 fifo_tx_wr_en <= 0;
-
+            //
             end
         //
         endcase
